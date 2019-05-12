@@ -1,0 +1,3 @@
+-- 1. Choose the sample database (custom, Adventure Works, hammer DB)
+-- 2. Build script that creates table with 2^20 - 1 rows all in delta store
+-- 3. Show that Update in delta store is insert + delete
