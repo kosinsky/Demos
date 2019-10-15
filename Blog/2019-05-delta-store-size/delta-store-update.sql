@@ -56,7 +56,7 @@ INSERT INTO [FactOnlineSales_Wide]
 	UpdateDate
 )
 
-SELECT TOP(20000) 
+SELECT --TOP(200000) 
 	OnlineSalesKey,
 	DateKey,
 	StoreKey,
@@ -79,14 +79,26 @@ SELECT TOP(20000)
 	LoadDate,
 	UpdateDate
 FROM [FactOnlineSales]
-GO 50 -- SSMS will repeat script above 50 times
+--GO 50 -- SSMS will repeat script above 50 times
 
 -- Meassure delta sote size
 SELECT *, size_in_bytes/1024/1024 as [SizeMb]
 FROM sys.column_store_row_groups 
 WHERE object_id=OBJECT_ID('[dbo].[FactOnlineSales_WIDE]')
 
--- It's 156Mb => every single query will read it 
+-- Rebuild to ensure that we don't have delta store
+ALTER INDEX CI_FactOnlineSales_Wide ON FactOnlineSales_Wide REBUILD
 
+-- Meassure delta sote size
+SELECT *, size_in_bytes/1024/1024 as [SizeMb]
+FROM sys.column_store_row_groups 
+WHERE object_id=OBJECT_ID('[dbo].[FactOnlineSales_WIDE]')
 
--- 3. Show that Update in delta store is insert + delete
+-- Update 200K rows > 100K min to bypass delta store
+UPDATE TOP(200000) FactOnlineSales_WIDE SET UnitCost+=1
+
+-- Meassure delta sote size
+-- We have 200K records delta store now :(
+SELECT *, size_in_bytes/1024/1024 as [SizeMb]
+FROM sys.column_store_row_groups 
+WHERE object_id=OBJECT_ID('[dbo].[FactOnlineSales_WIDE]')
